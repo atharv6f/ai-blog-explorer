@@ -1,0 +1,110 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: blog-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bloguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogpass}
+      POSTGRES_DB: ${POSTGRES_DB:-blogdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bloguser} -d ${POSTGRES_DB:-blogdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - blog-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - blog-network
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    container_name: blog-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bloguser}:${POSTGRES_PASSWORD:-blogpass}@postgres:5432/${POSTGRES_DB:-blogdb}?schema=public
+      REDIS_URL: redis://redis:6379
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-development-secret-change-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - blog-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    container_name: blog-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bloguser}:${POSTGRES_PASSWORD:-blogpass}@postgres:5432/${POSTGRES_DB:-blogdb}
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app:delegated
+    networks:
+      - blog-network
+
+networks:
+  blog-network:
+    driver: bridge
+    name: ai-blog-network
+
+volumes:
+  postgres_data:
+    name: blog-postgres-data
+  redis_data:
+    name: blog-redis-data

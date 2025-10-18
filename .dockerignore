@@ -1,0 +1,94 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+__pycache__
+*.pyc
+.Python
+venv
+env
+.venv
+
+# Testing
+coverage
+.nyc_output
+.pytest_cache
+htmlcov
+
+# Next.js
+.next
+out
+build
+dist
+
+# Python
+*.egg-info
+.eggs
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+CHANGELOG.md
+docs
+*.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Test files
+__tests__
+__mocks__
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+e2e
+cypress
+
+# Misc
+.npmrc
+.yarnrc
+.editorconfig
+.eslintcache
+.prettierignore

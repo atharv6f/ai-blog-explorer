@@ -1,0 +1,53 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 30
+  },
+  "services": [
+    {
+      "name": "frontend",
+      "source": {
+        "repo": "frontend"
+      },
+      "build": {
+        "dockerfilePath": "./frontend/Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "node server.js",
+        "healthcheckPath": "/api/health",
+        "port": 3000
+      }
+    },
+    {
+      "name": "backend",
+      "source": {
+        "repo": "backend"
+      },
+      "build": {
+        "dockerfilePath": "./backend/Dockerfile"
+      },
+      "deploy": {
+        "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port 8000",
+        "healthcheckPath": "/health",
+        "port": 8000
+      }
+    }
+  ],
+  "databases": [
+    {
+      "name": "postgres",
+      "plugin": "postgresql"
+    },
+    {
+      "name": "redis",
+      "plugin": "redis"
+    }
+  ]
+}
